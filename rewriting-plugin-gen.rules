@@ -1,0 +1,145 @@
+import qualified all from ICAT
+export qualified all from ICAT
+
+import all from ICAT except 
+	DATA_NAME DATA_OBJ DATA_COLL_ID DATA_REPL_NUM DATA_VERSION 
+	DATA_TYPE_NAME DATA_SIZE DATA_PATH DATA_OWNER_NAME DATA_OWNER_ZONE 
+	DATA_IS_DIRTY DATA_STATUS DATA_CHECKSUM DATA_EXPIRY_TS DATA_MAP_ID 
+	DATA_MODE DATA_COMMENT DATA_CREATE_TS DATA_MODIFY_TS DATA_RESC_HIER
+	DATA_RESC_GROUP_NAME DATA_RESC_NAME
+export all from ICAT
+
+import qualified all from FileSystem
+export qualified all from FileSystem
+
+import qualified all from Utils
+export qualified all from Utils
+
+export 	
+	DATA_NAME DATA_OBJ DATA_COLL_ID DATA_REPL_NUM DATA_VERSION 
+	DATA_TYPE_NAME DATA_SIZE DATA_PATH DATA_OWNER_NAME DATA_OWNER_ZONE 
+	DATA_IS_DIRTY DATA_STATUS DATA_CHECKSUM DATA_EXPIRY_TS DATA_MAP_ID 
+	DATA_MODE DATA_COMMENT DATA_CREATE_TS DATA_MODIFY_TS DATA_RESC_HIER
+	DATA_RESC_GROUP_NAME DATA_RESC_NAME
+
+#define FS_RESC_ID 0
+#define FS_ID_OFFSET 100000000000
+#define FS_COLL_NAME "/tempZone/mnt/a"
+#define FS_ROOT "/tmp/mnt/a/"
+
+predicate FILE_DATA_ID(key input output ref File, key input output int64)
+rewrite FILE_DATA_ID(w, x)
+	FileSystem.FILE_ID(w,id) Utils.add(FS_ID_OFFSET,id,x)
+
+predicate DATA_NAME property(key input output int64, key input output int64, input output text)
+rewrite DATA_NAME(x,y,z)
+	ICAT.DATA_NAME(x,y,z) | FileSystem.FILE_NAME(w,z) FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) 
+export DATA_NAME
+
+
+predicate DATA_OBJ property(key input output int64, key input output int64, input output text)
+rewrite DATA_OBJ(x,y)
+	ICAT.DATA_OBJ(x,y) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) 
+export DATA_OBJ
+
+predicate DATA_COLL_ID property(key input output int64, key input output int64, input output text)
+rewrite DATA_COLL_ID(x,y,z)
+	ICAT.DATA_COLL_ID(x,y,z) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) COLL_NAME(cid, FS_COLL_NAME) Utils.add(FS_ID_OFFSET,cid,z)
+export DATA_COLL_ID
+
+predicate DATA_REPL_NUM property(key input output int64, key input output int64, input output int64)
+rewrite DATA_REPL_NUM(x,y,z)
+	ICAT.DATA_REPL_NUM(x,y,z) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) Utils.eq(0, z) // TODO 
+export DATA_REPL_NUM
+
+predicate DATA_VERSION property(key input output int64, key input output int64, input output text)
+rewrite DATA_VERSION(x,y,z)
+	ICAT.DATA_VERSION(x,y,z) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) Utils.eq("", z) // TODO 
+export DATA_VERSION
+
+predicate DATA_TYPE_NAME property(key input output int64, key input output int64, input output text)
+rewrite DATA_TYPE_NAME(x,y,z)
+	ICAT.DATA_TYPE_NAME(x,y,z) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) Utils.eq("", z) // TODO 
+export DATA_TYPE_NAME
+
+predicate DATA_SIZE property(key input output int64, key input output int64, input output int64)
+rewrite DATA_SIZE(x,y,z)
+	ICAT.DATA_SIZE(x,y,z) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) FileSystem.FILE_SIZE(w, z)
+export DATA_SIZE
+
+predicate DATA_PATH property(key input output int64, key input output int64, input output text)
+rewrite DATA_PATH(x,y,z)
+	ICAT.DATA_PATH(x,y,z) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) FILE_PATH(w,p) Utils.concat(FS_ROOT, p, z) 
+export DATA_PATH
+
+predicate DATA_OWNER_NAME property(key input output int64, key input output int64, input output text)
+rewrite DATA_OWNER_NAME(x,y,z)
+	ICAT.DATA_OWNER_NAME(x,y,z) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) Utils.eq("rods", z) // TODO 
+export DATA_OWNER_NAME
+
+predicate DATA_OWNER_ZONE property(key input output int64, key input output int64, input output text)
+rewrite DATA_OWNER_ZONE(x,y,z)
+	ICAT.DATA_OWNER_ZONE(x,y,z) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) Utils.eq("tempZone", z) // TODO 
+export DATA_OWNER_ZONE
+
+predicate DATA_IS_DIRTY property(key input output int64, key input output int64, input output int64)
+rewrite DATA_IS_DIRTY(x,y,z)
+	ICAT.DATA_IS_DIRYT(x,y,z) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) Utils.eq(1, z) // TODO 
+export DATA_IS_DIRTY
+
+predicate DATA_STATUS property(key input output int64, key input output int64, input output text)
+rewrite DATA_STATUS(x,y,z)
+	ICAT.DATA_STATUS(x,y,z) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) Utils.eq("", z) // TODO 
+export DATA_STATUS
+
+predicate DATA_CHECKSUM property(key input output int64, key input output int64, input output text)
+rewrite DATA_CHECKSUM(x,y,z)
+	ICAT.DATA_CHECKSUM(x,y,z) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) Utils.eq("", z) // TODO 
+export DATA_CHECKSUM
+
+predicate DATA_EXPIRY_TS property(key input output int64, key input output int64, input output text)
+rewrite DATA_EXPIRY_TS(x,y,z)
+	ICAT.DATA_EXPIRY_TS(x,y,z) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) Utils.eq("", z) // TODO 
+export DATA_EXPIRY_TS
+
+predicate DATA_MAP_ID property(key input output int64, key input output int64, input output int64)
+rewrite DATA_MAP_ID(x,y,z)
+	ICAT.DATA_MAP_ID(x,y,z) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) Utils.eq(0, z) // TODO 
+export DATA_MAP_ID
+
+predicate DATA_MODE property(key input output int64, key input output int64, input output text)
+rewrite DATA_MODE(x,y,z)
+	ICAT.DATA_MODE(x,y,z) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) FileSystem.FILE_MODE(w, mode) Utils.eq(text mode, z)
+export DATA_MODE
+
+predicate DATA_COMMENT property(key input output int64, key input output int64, input output text)
+rewrite DATA_COMMENT(x,y,z)
+	ICAT.DATA_COMMENT(x,y,z) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) Utils.eq("", z) // TODO 
+export DATA_COMMENT
+
+predicate DATA_CREATE_TS property(key input output int64, key input output int64, input output text)
+rewrite DATA_CREATE_TS(x,y,z)
+	ICAT.DATA_CREATE_TS(x,y,z) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) Utils.eq("", z) // TODO 
+export DATA_CREATE_TS
+
+predicate DATA_MODIFY_TS property(key input output int64, key input output int64, input output text)
+rewrite DATA_MODIFTY_TS(x,y,z)
+	ICAT.DATA_MODIFY_TS(x,y,z) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) FileSystem.DATA_MODIFY_TIME(w, mtime) Utils.eq(text mtime, z) // TODO
+export DATA_MODIFY_TS
+
+predicate DATA_RESC_GROUP_NAME property(key input output int64, key input output int64, input output text)
+rewrite DATA_RESC_GROUP_NAME(x,y,z)
+	ICAT.DATA_RESC_GROUP_NAME(x,y,z) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) Utils.eq("", z) // TODO 
+export DATA_RESC_GROUP_NAME
+
+predicate DATA_RESC_NAME property(key input output int64, key input output int64, input output text)
+rewrite DATA_RESC_NAME(x,y,z)
+	ICAT.DATA_RESC_NAME(x,y,z) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) Utils.eq("", z) // TODO 
+export DATA_RESC_NAME
+
+predicate DATA_RESC_HIER property(key input output int64, key input output int64, input output text)
+rewrite DATA_RESC_HIER(x,y,z)
+	ICAT.DATA_RESC_HIER(x,y,z) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) Utils.eq("", z) // TODO 
+export DATA_RESC_HIER
+
+#include "rewriting-plugin-common.rules"
