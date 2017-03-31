@@ -7,6 +7,10 @@ import all from ICAT except
 	DATA_IS_DIRTY DATA_STATUS DATA_CHECKSUM DATA_EXPIRY_TS DATA_MAP_ID 
 	DATA_MODE DATA_COMMENT DATA_CREATE_TS DATA_MODIFY_TS DATA_RESC_HIER
 	DATA_RESC_GROUP_NAME DATA_RESC_NAME
+	COLL_NAME COLL_OBJ COLL_PARENT_COLL_NAME COLL_TYPE COLL_OWNER_NAME
+	COLL_OWNER_ZONE COLL_EXPIRY_TS COLL_MAP_ID COLL_COMMENT COLL_CREATE_TS
+	COLL_MODIFY_TS COLL_INFO1 COLL_INFO2 COLL_INHERITANCE
+	OBJT_ACCESS_OBJ OBJT_ACCESS_CREATE_TS OBJT_ACCESS_MODIFY_TS
 export all from ICAT
 
 import qualified all from FileSystem
@@ -15,131 +19,232 @@ export qualified all from FileSystem
 import qualified all from Utils
 export qualified all from Utils
 
-export 	
-	DATA_NAME DATA_OBJ DATA_COLL_ID DATA_REPL_NUM DATA_VERSION 
-	DATA_TYPE_NAME DATA_SIZE DATA_PATH DATA_OWNER_NAME DATA_OWNER_ZONE 
-	DATA_IS_DIRTY DATA_STATUS DATA_CHECKSUM DATA_EXPIRY_TS DATA_MAP_ID 
-	DATA_MODE DATA_COMMENT DATA_CREATE_TS DATA_MODIFY_TS DATA_RESC_HIER
-	DATA_RESC_GROUP_NAME DATA_RESC_NAME
-
-#define FS_RESC_ID 0
+#define FS_RESC_NAME "demoResc"
 #define FS_ID_OFFSET 100000000000
 #define FS_COLL_NAME "/tempZone/mnt/a"
-#define FS_ROOT "/tmp/mnt/a/"
+#define FS_COLL_MNT "/tempZone/mnt"
+#define FS_ROOT "/tmp/mnt/a"
 
-predicate FILE_DATA_ID(key input output ref File, key input output int64)
+predicate FILE_DATA_ID property(key input output ref FileObject, key input output int64)
 rewrite FILE_DATA_ID(w, x)
 	FileSystem.FILE_ID(w,id) Utils.add(FS_ID_OFFSET,id,x)
 
+predicate DIR_COLL_ID property(key input output ref DirObject, key input output int64)
+rewrite DIR_COLL_ID(w, x)
+	FileSystem.DIR_ID(w,id) Utils.add(FS_ID_OFFSET,id,x)
+
+predicate FS_RESC_ID property(key input output int64)
+rewrite FS_RESC_ID(x)
+	ICAT.RESC_NAME(x, FS_RESC_NAME)
+
 predicate DATA_NAME property(key input output int64, key input output int64, input output text)
 rewrite DATA_NAME(x,y,z)
-	ICAT.DATA_NAME(x,y,z) | FileSystem.FILE_NAME(w,z) FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) 
+	ICAT.DATA_NAME(x,y,z) | FileSystem.FILE_NAME(w,z) FILE_DATA_ID(w,x) FS_RESC_ID(y) 
 export DATA_NAME
 
 
-predicate DATA_OBJ property(key input output int64, key input output int64, input output text)
+predicate DATA_OBJ property(key input output int64, key input output int64)
 rewrite DATA_OBJ(x,y)
-	ICAT.DATA_OBJ(x,y) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) 
+	ICAT.DATA_OBJ(x,y) | FILE_DATA_ID(w,x) FS_RESC_ID(y) 
 export DATA_OBJ
 
-predicate DATA_COLL_ID property(key input output int64, key input output int64, input output text)
+predicate DATA_COLL_ID property(key input output int64, key input output int64, input output int64)
 rewrite DATA_COLL_ID(x,y,z)
-	ICAT.DATA_COLL_ID(x,y,z) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) COLL_NAME(cid, FS_COLL_NAME) Utils.add(FS_ID_OFFSET,cid,z)
+	ICAT.DATA_COLL_ID(x,y,z) | 
+	FILE_DATA_ID(w,x) FS_RESC_ID(y) FileSystem.FILE_DIR(w, d) DIR_COLL_ID(d,z)
 export DATA_COLL_ID
 
 predicate DATA_REPL_NUM property(key input output int64, key input output int64, input output int64)
 rewrite DATA_REPL_NUM(x,y,z)
-	ICAT.DATA_REPL_NUM(x,y,z) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) Utils.eq(0, z) // TODO 
+	ICAT.DATA_REPL_NUM(x,y,z) | FILE_DATA_ID(w,x) FS_RESC_ID(y) Utils.eq(0, z) // TODO 
 export DATA_REPL_NUM
 
 predicate DATA_VERSION property(key input output int64, key input output int64, input output text)
 rewrite DATA_VERSION(x,y,z)
-	ICAT.DATA_VERSION(x,y,z) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) Utils.eq("", z) // TODO 
+	ICAT.DATA_VERSION(x,y,z) | FILE_DATA_ID(w,x) FS_RESC_ID(y) Utils.eq("", z) // TODO 
 export DATA_VERSION
 
 predicate DATA_TYPE_NAME property(key input output int64, key input output int64, input output text)
 rewrite DATA_TYPE_NAME(x,y,z)
-	ICAT.DATA_TYPE_NAME(x,y,z) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) Utils.eq("", z) // TODO 
+	ICAT.DATA_TYPE_NAME(x,y,z) | FILE_DATA_ID(w,x) FS_RESC_ID(y) Utils.eq("", z) // TODO 
 export DATA_TYPE_NAME
 
 predicate DATA_SIZE property(key input output int64, key input output int64, input output int64)
 rewrite DATA_SIZE(x,y,z)
-	ICAT.DATA_SIZE(x,y,z) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) FileSystem.FILE_SIZE(w, z)
+	ICAT.DATA_SIZE(x,y,z) | FILE_DATA_ID(w,x) FS_RESC_ID(y) FileSystem.FILE_SIZE(w, z)
 export DATA_SIZE
 
 predicate DATA_PATH property(key input output int64, key input output int64, input output text)
 rewrite DATA_PATH(x,y,z)
-	ICAT.DATA_PATH(x,y,z) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) FILE_PATH(w,p) Utils.concat(FS_ROOT, p, z) 
+	ICAT.DATA_PATH(x,y,z) | FILE_DATA_ID(w,x) FS_RESC_ID(y) FileSystem.FILE_PATH(w,p) Utils.concat(FS_ROOT, p, z) 
 export DATA_PATH
 
 predicate DATA_OWNER_NAME property(key input output int64, key input output int64, input output text)
 rewrite DATA_OWNER_NAME(x,y,z)
-	ICAT.DATA_OWNER_NAME(x,y,z) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) Utils.eq("rods", z) // TODO 
+	ICAT.DATA_OWNER_NAME(x,y,z) | FILE_DATA_ID(w,x) FS_RESC_ID(y) Utils.eq("rods", z) // TODO 
 export DATA_OWNER_NAME
 
 predicate DATA_OWNER_ZONE property(key input output int64, key input output int64, input output text)
 rewrite DATA_OWNER_ZONE(x,y,z)
-	ICAT.DATA_OWNER_ZONE(x,y,z) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) Utils.eq("tempZone", z) // TODO 
+	ICAT.DATA_OWNER_ZONE(x,y,z) | FILE_DATA_ID(w,x) FS_RESC_ID(y) Utils.eq("tempZone", z) // TODO 
 export DATA_OWNER_ZONE
 
 predicate DATA_IS_DIRTY property(key input output int64, key input output int64, input output int64)
 rewrite DATA_IS_DIRTY(x,y,z)
-	ICAT.DATA_IS_DIRYT(x,y,z) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) Utils.eq(1, z) // TODO 
+	ICAT.DATA_IS_DIRTY(x,y,z) | FILE_DATA_ID(w,x) FS_RESC_ID(y) Utils.eq(1, z) // TODO 
 export DATA_IS_DIRTY
 
 predicate DATA_STATUS property(key input output int64, key input output int64, input output text)
 rewrite DATA_STATUS(x,y,z)
-	ICAT.DATA_STATUS(x,y,z) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) Utils.eq("", z) // TODO 
+	ICAT.DATA_STATUS(x,y,z) | FILE_DATA_ID(w,x) FS_RESC_ID(y) Utils.eq("", z) // TODO 
 export DATA_STATUS
 
 predicate DATA_CHECKSUM property(key input output int64, key input output int64, input output text)
 rewrite DATA_CHECKSUM(x,y,z)
-	ICAT.DATA_CHECKSUM(x,y,z) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) Utils.eq("", z) // TODO 
+	ICAT.DATA_CHECKSUM(x,y,z) | FILE_DATA_ID(w,x) FS_RESC_ID(y) Utils.eq("", z) // TODO 
 export DATA_CHECKSUM
 
 predicate DATA_EXPIRY_TS property(key input output int64, key input output int64, input output text)
 rewrite DATA_EXPIRY_TS(x,y,z)
-	ICAT.DATA_EXPIRY_TS(x,y,z) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) Utils.eq("", z) // TODO 
+	ICAT.DATA_EXPIRY_TS(x,y,z) | FILE_DATA_ID(w,x) FS_RESC_ID(y) Utils.eq("", z) // TODO 
 export DATA_EXPIRY_TS
 
 predicate DATA_MAP_ID property(key input output int64, key input output int64, input output int64)
 rewrite DATA_MAP_ID(x,y,z)
-	ICAT.DATA_MAP_ID(x,y,z) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) Utils.eq(0, z) // TODO 
+	ICAT.DATA_MAP_ID(x,y,z) | FILE_DATA_ID(w,x) FS_RESC_ID(y) Utils.eq(0, z) // TODO 
 export DATA_MAP_ID
 
 predicate DATA_MODE property(key input output int64, key input output int64, input output text)
 rewrite DATA_MODE(x,y,z)
-	ICAT.DATA_MODE(x,y,z) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) FileSystem.FILE_MODE(w, mode) Utils.eq(text mode, z)
+	ICAT.DATA_MODE(x,y,z) | FILE_DATA_ID(w,x) FS_RESC_ID(y) FileSystem.FILE_MODE(w, mode) Utils.eq(text mode, z)
 export DATA_MODE
 
 predicate DATA_COMMENT property(key input output int64, key input output int64, input output text)
 rewrite DATA_COMMENT(x,y,z)
-	ICAT.DATA_COMMENT(x,y,z) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) Utils.eq("", z) // TODO 
+	ICAT.DATA_COMMENT(x,y,z) | FILE_DATA_ID(w,x) FS_RESC_ID(y) Utils.eq("", z) // TODO 
 export DATA_COMMENT
 
 predicate DATA_CREATE_TS property(key input output int64, key input output int64, input output text)
 rewrite DATA_CREATE_TS(x,y,z)
-	ICAT.DATA_CREATE_TS(x,y,z) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) Utils.eq("", z) // TODO 
+	ICAT.DATA_CREATE_TS(x,y,z) | FILE_DATA_ID(w,x) FS_RESC_ID(y) Utils.eq("", z) // TODO 
 export DATA_CREATE_TS
 
 predicate DATA_MODIFY_TS property(key input output int64, key input output int64, input output text)
-rewrite DATA_MODIFTY_TS(x,y,z)
-	ICAT.DATA_MODIFY_TS(x,y,z) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) FileSystem.DATA_MODIFY_TIME(w, mtime) Utils.eq(text mtime, z) // TODO
+rewrite DATA_MODIFY_TS(x,y,z)
+	ICAT.DATA_MODIFY_TS(x,y,z) | FILE_DATA_ID(w,x) FS_RESC_ID(y) FileSystem.FILE_MODIFY_TIME(w, mtime) Utils.eq(text mtime, z) // TODO
 export DATA_MODIFY_TS
 
 predicate DATA_RESC_GROUP_NAME property(key input output int64, key input output int64, input output text)
 rewrite DATA_RESC_GROUP_NAME(x,y,z)
-	ICAT.DATA_RESC_GROUP_NAME(x,y,z) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) Utils.eq("", z) // TODO 
+	ICAT.DATA_RESC_GROUP_NAME(x,y,z) | FILE_DATA_ID(w,x) FS_RESC_ID(y) Utils.eq("", z) // TODO 
 export DATA_RESC_GROUP_NAME
 
 predicate DATA_RESC_NAME property(key input output int64, key input output int64, input output text)
 rewrite DATA_RESC_NAME(x,y,z)
-	ICAT.DATA_RESC_NAME(x,y,z) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) Utils.eq("", z) // TODO 
+	ICAT.DATA_RESC_NAME(x,y,z) | FILE_DATA_ID(w,x) FS_RESC_ID(y) Utils.eq("", z) // TODO 
 export DATA_RESC_NAME
 
 predicate DATA_RESC_HIER property(key input output int64, key input output int64, input output text)
 rewrite DATA_RESC_HIER(x,y,z)
-	ICAT.DATA_RESC_HIER(x,y,z) | FILE_DATA_ID(w,x) Utils.eq(FS_RESC_ID,y) Utils.eq("", z) // TODO 
+	ICAT.DATA_RESC_HIER(x,y,z) | FILE_DATA_ID(w,x) FS_RESC_ID(y) Utils.eq("", z) // TODO 
 export DATA_RESC_HIER
+
+predicate DIR_REL_PATH_COLL_NAME property(key input text, input output text)
+rewrite DIR_REL_PATH_COLL_NAME(dn, cn)
+	eq(dn, "/") eq(FS_COLL_NAME, cn) |
+	~eq(dn, "/") Utils.concat(FS_COLL_NAME,dn,cn)
+ 
+predicate COLL_NAME_DIR_REL_PATH property(key input text, input output text)
+rewrite COLL_NAME_DIR_REL_PATH(cn, dn)
+	Utils.strlen(FS_COLL_NAME, fsclen) Utils.strlen(cn, clen) Utils.substr(cn,fsclen,clen,subn) Utils.concat(FS_ROOT,subn,dn)
+
+predicate COLL_NAME property(key input output int64, input output text)
+rewrite COLL_NAME(x,z)
+	ICAT.COLL_NAME(x,z) | DIR_COLL_ID(w,x) FileSystem.DIR_PATH(w,dn) DIR_REL_PATH_COLL_NAME(dn,z)  
+export COLL_NAME
+
+predicate COLL_OBJ property(key input output int64)
+rewrite COLL_OBJ(x)
+	ICAT.COLL_OBJ(x) | FileSystem.DIR_NAME(w,z) DIR_COLL_ID(w,x)
+export COLL_OBJ
+
+predicate COLL_PARENT_COLL_NAME property(key input output int64, input output text)
+rewrite COLL_PARENT_COLL_NAME(x,z)
+	ICAT.COLL_PARENT_COLL_NAME(x,z) | DIR_COLL_ID(w,x) FileSystem.DIR_PATH(w, dn)
+	(
+		Utils.eq(dn, "/") Utils.eq(FS_COLL_MNT, z) |
+		~ Utils.eq(dn, "/") FileSystem.DIR_DIR(w, ddd) FileSystem.DIR_PATH(ddd, dddn) DIR_REL_PATH_COLL_NAME(dddn, z)  
+	)
+export COLL_PARENT_COLL_NAME
+
+predicate COLL_OWNER_NAME property(key input output int64, input output text)
+rewrite COLL_OWNER_NAME(x,z)
+	ICAT.COLL_OWNER_NAME(x,z) | DIR_COLL_ID(w,x) Utils.eq("rods", z) // TODO
+export COLL_OWNER_NAME
+
+predicate COLL_OWNER_ZONE property(key input output int64, input output text)
+rewrite COLL_OWNER_ZONE(x,z)
+	ICAT.COLL_OWNER_ZONE(x,z) | DIR_COLL_ID(w,x) Utils.eq("tempZone", z) // TODO
+export COLL_OWNER_ZONE
+
+predicate COLL_MAP_ID property(key input output int64, input output int64)
+rewrite COLL_MAP_ID(x,z)
+	ICAT.COLL_MAP_ID(x,z) | DIR_COLL_ID(w,x) Utils.eq(0, z) // TODO
+export COLL_MAP_ID
+
+predicate COLL_INHERITANCE property(key input output int64, input output text)
+rewrite COLL_INHERITANCE(x,z)
+	ICAT.COLL_INHERITANCE(x,z) | DIR_COLL_ID(w,x) Utils.eq("", z) // TODO
+export COLL_INHERITANCE
+
+predicate COLL_TYPE property(key input output int64, input output text)
+rewrite COLL_TYPE(x,z)
+	ICAT.COLL_TYPE(x,z) | DIR_COLL_ID(w,x) Utils.eq(/*"QueryArrow/mnt"*/"", z) // TODO
+export COLL_TYPE
+
+predicate COLL_INFO1 property(key input output int64, input output text)
+rewrite COLL_INFO1(x,z)
+	ICAT.COLL_INFO1(x,z) | DIR_COLL_ID(w,x) Utils.eq("", z) // TODO
+export COLL_INFO1
+
+predicate COLL_INFO2 property(key input output int64, input output text)
+rewrite COLL_INFO2(x,z)
+	ICAT.COLL_INFO2(x,z) | DIR_COLL_ID(w,x) Utils.eq("", z) // TODO
+export COLL_INFO2
+
+predicate COLL_EXPIRY_TS property(key input output int64, input output text)
+rewrite COLL_EXPIRY_TS(x,z)
+	ICAT.COLL_EXPIRY_TS(x,z) | DIR_COLL_ID(w,x) Utils.eq("", z) // TODO
+export COLL_EXPIRY_TS
+
+predicate COLL_COMMENT property(key input output int64, input output text)
+rewrite COLL_COMMENT(x,z)
+	ICAT.COLL_COMMENT(x,z) | DIR_COLL_ID(w,x) Utils.eq("", z) // TODO
+export COLL_COMMENT
+
+predicate COLL_CREATE_TS property(key input output int64, input output text)
+rewrite COLL_CREATE_TS(x,z)
+	ICAT.COLL_CREATE_TS(x,z) | DIR_COLL_ID(w,x) Utils.eq("", z) // TODO
+export COLL_CREATE_TS
+
+predicate COLL_MODIFY_TS property(key input output int64, input output text)
+rewrite COLL_MODIFY_TS(x,z)
+	ICAT.COLL_MODIFY_TS(x,z) | DIR_COLL_ID(w,x) FileSystem.DIR_MODIFY_TIME(w,mtime) Utils.eq(text mtime, z)
+export COLL_MODIFY_TS
+
+predicate OBJT_ACCESS_OBJ object(key input output int64, key input output int64, key input output int64)
+rewrite OBJT_ACCESS_OBJ(id, uid, acc)
+	ICAT.OBJT_ACCESS_OBJ(id, uid, acc) | DIR_COLL_ID(w,id) USER_NAME(uid, "rods") USER_ZONE_NAME(uid, "tempZone") eq(1200, acc) // TODO
+export OBJT_ACCESS_OBJ
+
+predicate OBJT_ACCESS_CREATE_TS object(key input output int64, key input output int64, key input output int64, input output text)
+rewrite OBJT_ACCESS_CREATE_TS(id, uid, acc, ctime)
+	ICAT.OBJT_ACCESS_CREATE_TS(id, uid, acc, ctime) | DIR_COLL_ID(w,id) USER_NAME(uid, "rods") USER_ZONE_NAME(uid, "tempZone") eq(1200, acc) eq("", ctime) // TODO
+export OBJT_ACCESS_CREATE_TS
+
+predicate OBJT_ACCESS_MODIFY_TS object(key input output int64, key input output int64, key input output int64, input output text)
+rewrite OBJT_ACCESS_MODIFY_TS(id, uid, acc, mtime)
+	ICAT.OBJT_ACCESS_MODIFY_TS(id, uid, acc, mtime) | DIR_COLL_ID(w,id) USER_NAME(uid, "rods") USER_ZONE_NAME(uid, "tempZone") eq(1200, acc) eq("", mtime) // TODO
+export OBJT_ACCESS_MODIFY_TS
 
 #include "rewriting-plugin-common.rules"
